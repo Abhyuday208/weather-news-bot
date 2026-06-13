@@ -4,6 +4,10 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+# ==================================
+# CONFIG
+# ==================================
+
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
@@ -13,114 +17,202 @@ RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL")
 
 CITY = "Kochi"
 
+# ==================================
+# WEATHER
+# ==================================
 
 def get_weather():
-    url = (
-        f"https://api.openweathermap.org/data/2.5/weather"
-        f"?q={CITY}&appid={OPENWEATHER_API_KEY}&units=metric"
-    )
 
-    response = requests.get(url).json()
-
-    if response.get("cod") != 200:
-        return f"Weather Error: {response}"
-
-    temp = response["main"]["temp"]
-    condition = response["weather"][0]["description"]
-
-    alerts = []
-
-    if temp > 35:
-        alerts.append("🔥 HIGH TEMPERATURE ALERT")
-
-    if "rain" in condition.lower():
-        alerts.append("☔ RAIN ALERT")
-
-    weather_report = (
-        f"WEATHER REPORT\n"
-        f"City: {CITY}\n"
-        f"Temperature: {temp}°C\n"
-        f"Condition: {condition}\n\n"
-    )
-
-    if alerts:
-        weather_report += "\n".join(alerts) + "\n"
-
-    return weather_report
-
-
-def get_news():
-    url = (
-        f"https://newsapi.org/v2/top-headlines"
-        f"?country=in&pageSize=10&apiKey={NEWS_API_KEY}"
-    )
-
-    response = requests.get(url).json()
-
-    if "articles" not in response:
-        return f"News API Error:\n{response}"
-
-    news_text = "\nTOP NEWS HEADLINES\n\n"
-
-    for i, article in enumerate(response["articles"][:10], start=1):
-        title = article.get("title", "No Title")
-        source = article.get("source", {}).get("name", "Unknown")
-        published = article.get("publishedAt", "Unknown")
-        link = article.get("url", "")
-
-        news_text += (
-            f"{i}. {title}\n"
-            f"Source: {source}\n"
-            f"Published: {published}\n"
-            f"Link: {link}\n\n"
+    try:
+        url = (
+            f"https://api.openweathermap.org/data/2.5/weather"
+            f"?q={CITY}"
+            f"&appid={OPENWEATHER_API_KEY}"
+            f"&units=metric"
         )
 
-    return news_text
+        response = requests.get(url, timeout=20).json()
 
+        if response.get("cod") != 200:
+            return "Unable to fetch weather."
+
+        temp = response["main"]["temp"]
+        condition = response["weather"][0]["description"]
+
+        alert_text = ""
+
+        if temp > 35:
+            alert_text += "\n🔥 HIGH TEMPERATURE ALERT\n"
+
+        if "rain" in condition.lower():
+            alert_text += "\n☔ RAIN ALERT\n"
+
+        return (
+            f"WEATHER REPORT\n"
+            f"-------------------------\n"
+            f"City: {CITY}\n"
+            f"Temperature: {temp}°C\n"
+            f"Condition: {condition}\n"
+            f"{alert_text}\n"
+        )
+
+    except Exception as e:
+        return f"Weather Error: {str(e)}"
+
+
+# ==================================
+# NEWS
+# ==================================
+
+def get_news():
+
+    try:
+
+        url = (
+            f"https://newsapi.org/v2/top-headlines"
+            f"?country=in"
+            f"&pageSize=10"
+            f"&apiKey={NEWS_API_KEY}"
+        )
+
+        response = requests.get(url, timeout=20).json()
+
+        print("News API Response:", response)
+
+        if response.get("status") != "ok":
+            return (
+                "NEWS ERROR\n"
+                f"{response}\n"
+            )
+
+        articles = response.get("articles", [])
+
+        if len(articles) == 0:
+            return "No news articles available."
+
+        news_text = (
+            "\nTOP NEWS HEADLINES\n"
+            "-------------------------\n\n"
+        )
+
+        for i, article in enumerate(articles[:10], start=1):
+
+            title = article.get(
+                "title",
+                "No Title"
+            )
+
+            source = article.get(
+                "source",
+                {}
+            ).get(
+                "name",
+                "Unknown"
+            )
+
+            published = article.get(
+                "publishedAt",
+                "Unknown"
+            )
+
+            link = article.get(
+                "url",
+                "No Link"
+            )
+
+            news_text += (
+                f"{i}. {title}\n"
+                f"Source: {source}\n"
+                f"Published: {published}\n"
+                f"Link: {link}\n\n"
+            )
+
+        return news_text
+
+    except Exception as e:
+        return f"News Error: {str(e)}"
+
+
+# ==================================
+# EMAIL
+# ==================================
 
 def send_email(content):
-    msg = MIMEMultipart()
 
-    msg["From"] = EMAIL_ADDRESS
-    msg["To"] = RECEIVER_EMAIL
-    msg["Subject"] = "Daily Weather & News Report"
+    try:
 
-    msg.attach(MIMEText(content, "plain"))
+        msg = MIMEMultipart()
 
-    print("Connecting to Gmail...")
+        msg["From"] = EMAIL_ADDRESS
+        msg["To"] = RECEIVER_EMAIL
+        msg["Subject"] = (
+            "Daily Weather & News Report"
+        )
 
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
+        msg.attach(
+            MIMEText(
+                content,
+                "plain"
+            )
+        )
 
-    print("Logging in...")
+        print("Connecting to Gmail...")
 
-    server.login(
-        EMAIL_ADDRESS,
-        EMAIL_PASSWORD
-    )
+        server = smtplib.SMTP(
+            "smtp.gmail.com",
+            587
+        )
 
-    print("Sending email...")
+        server.starttls()
 
-    server.send_message(msg)
+        print("Logging in...")
 
-    server.quit()
+        server.login(
+            EMAIL_ADDRESS,
+            EMAIL_PASSWORD
+        )
 
-    print("Email Sent Successfully!")
+        print("Sending email...")
 
+        server.send_message(msg)
+
+        server.quit()
+
+        print(
+            "Email Sent Successfully!"
+        )
+
+    except Exception as e:
+
+        print(
+            "Email Error:",
+            str(e)
+        )
+
+
+# ==================================
+# MAIN
+# ==================================
 
 def main():
-    weather = get_weather()
-    news = get_news()
 
-    email_content = (
-        weather
-        + "\n\n"
+    print("Fetching weather...")
+
+    weather_report = get_weather()
+
+    print("Fetching news...")
+
+    news_report = get_news()
+
+    final_report = (
+        weather_report
+        + "\n"
         + "=" * 50
-        + "\n\n"
-        + news
+        + "\n"
+        + news_report
     )
 
-    send_email(email_content)
+    send_email(final_report)
 
 
 if __name__ == "__main__":
