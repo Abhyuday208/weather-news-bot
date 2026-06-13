@@ -1,23 +1,23 @@
 import os
 import requests
 import smtplib
-
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL")
 
+CITY = "Kochi"
+
 
 def get_weather():
-    city = "Kochi"
-
     url = (
         f"https://api.openweathermap.org/data/2.5/weather"
-        f"?q={city}&appid={OPENWEATHER_API_KEY}&units=metric"
+        f"?q={CITY}&appid={OPENWEATHER_API_KEY}&units=metric"
     )
 
     response = requests.get(url).json()
@@ -26,20 +26,33 @@ def get_weather():
         return f"Weather Error: {response}"
 
     temp = response["main"]["temp"]
-    description = response["weather"][0]["description"]
+    condition = response["weather"][0]["description"]
 
-    return (
-        f"🌤 Weather Update\n\n"
-        f"City: {city}\n"
+    alerts = []
+
+    if temp > 35:
+        alerts.append("🔥 HIGH TEMPERATURE ALERT")
+
+    if "rain" in condition.lower():
+        alerts.append("☔ RAIN ALERT")
+
+    weather_report = (
+        f"WEATHER REPORT\n"
+        f"City: {CITY}\n"
         f"Temperature: {temp}°C\n"
-        f"Condition: {description}"
+        f"Condition: {condition}\n\n"
     )
+
+    if alerts:
+        weather_report += "\n".join(alerts) + "\n"
+
+    return weather_report
 
 
 def get_news():
     url = (
         f"https://newsapi.org/v2/top-headlines"
-        f"?country=in&pageSize=5&apiKey={NEWS_API_KEY}"
+        f"?country=in&pageSize=10&apiKey={NEWS_API_KEY}"
     )
 
     response = requests.get(url).json()
@@ -47,15 +60,20 @@ def get_news():
     if "articles" not in response:
         return f"News API Error:\n{response}"
 
-    articles = response["articles"]
+    news_text = "\nTOP NEWS HEADLINES\n\n"
 
-    news_text = "\n\n📰 Top News Headlines\n\n"
-
-    for i, article in enumerate(articles, start=1):
+    for i, article in enumerate(response["articles"][:10], start=1):
         title = article.get("title", "No Title")
         source = article.get("source", {}).get("name", "Unknown")
+        published = article.get("publishedAt", "Unknown")
+        link = article.get("url", "")
 
-        news_text += f"{i}. {title}\nSource: {source}\n\n"
+        news_text += (
+            f"{i}. {title}\n"
+            f"Source: {source}\n"
+            f"Published: {published}\n"
+            f"Link: {link}\n\n"
+        )
 
     return news_text
 
@@ -65,7 +83,7 @@ def send_email(content):
 
     msg["From"] = EMAIL_ADDRESS
     msg["To"] = RECEIVER_EMAIL
-    msg["Subject"] = "Daily Weather & News Update"
+    msg["Subject"] = "Daily Weather & News Report"
 
     msg.attach(MIMEText(content, "plain"))
 
@@ -76,7 +94,10 @@ def send_email(content):
 
     print("Logging in...")
 
-    server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+    server.login(
+        EMAIL_ADDRESS,
+        EMAIL_PASSWORD
+    )
 
     print("Sending email...")
 
@@ -91,7 +112,13 @@ def main():
     weather = get_weather()
     news = get_news()
 
-    email_content = weather + "\n\n" + news
+    email_content = (
+        weather
+        + "\n\n"
+        + "=" * 50
+        + "\n\n"
+        + news
+    )
 
     send_email(email_content)
 
