@@ -102,11 +102,11 @@ def get_rss_news():
         "https://www.thehindu.com/news/feeder/default.rss"
     }
 
-    news_text = "\n\nTOP NEWS HEADLINES\n\n"
+    news_text = "\n\nTOP NEWS HEADLINES\n"
 
     for source, url in feeds.items():
 
-        news_text += f"\n===== {source} =====\n\n"
+        news_text += f"\n===== {source} =====\n"
 
         feed = feedparser.parse(url)
 
@@ -126,7 +126,7 @@ def get_rss_news():
             news_text += (
                 f"• {title}\n"
                 f"Published: {published}\n"
-                f"Link: {link}\n\n"
+                f"Link: {link}\n"
             )
 
     return news_text
