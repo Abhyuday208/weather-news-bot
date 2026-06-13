@@ -73,12 +73,16 @@ def get_weather():
 
 def get_rss_news():
 
-   feeds = {
-    "Indian Express": "https://indianexpress.com/section/india/feed/",
-    "The Hindu": "https://www.thehindu.com/news/feeder/default.rss",
-    "BBC": "https://feeds.bbci.co.uk/news/rss.xml"
-}
+  feeds = {
+        "BBC":
+        "https://feeds.bbci.co.uk/news/rss.xml",
 
+         "Indian Express":
+         "https://indianexpress.com/section/india/feed/",
+      
+        "The Hindu":
+        "https://www.thehindu.com/news/feeder/default.rss"
+    }
     news_text = "\n\nTOP NEWS HEADLINES\n\n"
 
     for source, url in feeds.items():
