@@ -10,7 +10,7 @@ from email.mime.multipart import MIMEMultipart
 # CONFIG
 # ======================
 
-CITIES = [
+CITY = [
     "Kochi",
     "Thiruvananthapuram",
     "Bengaluru",
