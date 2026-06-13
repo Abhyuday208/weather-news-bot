@@ -10,15 +10,7 @@ from email.mime.multipart import MIMEMultipart
 # CONFIG
 # ======================
 
-CITY = [
-    "Kochi",
-    "Thiruvananthapuram",
-    "Bengaluru",
-    "Chennai",
-    "Hyderabad",
-    "Mumbai",
-    "Delhi"
-]
+
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
@@ -30,39 +22,65 @@ RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL")
 # ======================
 
 def get_weather():
+    cities = [
+        "Kochi",
+        "Thiruvananthapuram",
+        "Bengaluru",
+        "Delhi",
+        "Chennai",
+        "Mumbai",
+        "Hyderabad",
+        "Kolkata"
+    ]
 
-    url = (
-        f"https://api.openweathermap.org/data/2.5/weather"
-        f"?q={CITY}"
-        f"&appid={OPENWEATHER_API_KEY}"
-        f"&units=metric"
-    )
+    report = "🌤 DAILY WEATHER REPORT\n\n"
+    all_alerts = []
 
-    response = requests.get(url).json()
+    for city in cities:
+        try:
+            url = (
+                f"https://api.openweathermap.org/data/2.5/weather"
+                f"?q={city}"
+                f"&appid={OPENWEATHER_API_KEY}"
+                f"&units=metric"
+            )
+            data = requests.get(url).json()
 
-    if response.get("cod") != 200:
-        return "Weather data unavailable."
+            if data.get("cod") != 200:
+                report += f"❌ Weather data unavailable for {city}\n\n"
+                continue
 
-    temp = response["main"]["temp"]
-    condition = response["weather"][0]["description"]
+            temp = data["main"]["temp"]
+            condition = data["weather"][0]["description"]
 
-    alerts = []
+            # Per-city alerts
+            city_alerts = []
+            if temp > 35:
+                city_alerts.append("🔥 HIGH TEMPERATURE ALERT")
+            if "rain" in condition.lower():
+                city_alerts.append("☔ RAIN ALERT")
 
-    if temp > 35:
-        alerts.append("🔥 HIGH TEMPERATURE ALERT")
+            report += (
+                f"📍 {city}\n"
+                f"🌡 Temperature: {temp}°C\n"
+                f"☁ Condition: {condition}\n"
+            )
 
-    if "rain" in condition.lower():
-        alerts.append("☔ RAIN ALERT")
+            if city_alerts:
+                report += "⚠ " + " | ".join(city_alerts) + "\n"
+                all_alerts.append(f"{city}: {' | '.join(city_alerts)}")
 
-    report = (
-        f"WEATHER REPORT\n"
-        f"City: {CITY}\n"
-        f"Temperature: {temp}°C\n"
-        f"Condition: {condition}\n\n"
-    )
+            report += "\n"
 
-    if alerts:
-        report += "\n".join(alerts)
+        except Exception:
+            report += f"❌ Could not fetch weather for {city}\n\n"
+
+    # Summary alert block at the end
+    if all_alerts:
+        report += "━━━━━━━━━━━━━━━━━━━━\n"
+        report += "🚨 ALERT SUMMARY\n"
+        for alert in all_alerts:
+            report += f"  • {alert}\n"
 
     return report
 
