@@ -110,7 +110,7 @@ def get_rss_news():
 
         feed = feedparser.parse(url)
 
-        entries = feed.entries[:3]
+        entries = feed.entries[:2]
 
         for item in entries:
 
