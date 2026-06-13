@@ -22,3 +22,15 @@ def get_news():
         )
 
     return news_summary
+def main():
+    weather = get_weather()
+    news = get_news()
+
+    email_content = weather + "\n\n" + news
+
+    send_email(email_content)
+
+    print("Email Sent Successfully!")
+
+if __name__ == "__main__":
+    main()
