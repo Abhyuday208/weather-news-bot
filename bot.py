@@ -9,8 +9,15 @@ from email.mime.multipart import MIMEMultipart
 # ======================
 # CONFIG
 # ======================
-
-CITY = "Kochi"
+CITIES = [
+    "Kochi",
+    "Thiruvananthapuram",
+    "Bengaluru",
+    "Chennai",
+    "Hyderabad",
+    "Mumbai",
+    "Delhi"
+]
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
@@ -66,16 +73,11 @@ def get_weather():
 
 def get_rss_news():
 
-    feeds = {
-        "BBC":
-        "https://feeds.bbci.co.uk/news/rss.xml",
-
-        "Reuters":
-        "https://feeds.reuters.com/reuters/topNews",
-
-        "The Hindu":
-        "https://www.thehindu.com/news/feeder/default.rss"
-    }
+   feeds = {
+    "Indian Express": "https://indianexpress.com/section/india/feed/",
+    "The Hindu": "https://www.thehindu.com/news/feeder/default.rss",
+    "BBC": "https://feeds.bbci.co.uk/news/rss.xml"
+}
 
     news_text = "\n\nTOP NEWS HEADLINES\n\n"
 
