@@ -9,6 +9,7 @@ from email.mime.multipart import MIMEMultipart
 # ======================
 # CONFIG
 # ======================
+
 CITIES = [
     "Kochi",
     "Thiruvananthapuram",
@@ -73,16 +74,17 @@ def get_weather():
 
 def get_rss_news():
 
-  feeds = {
+    feeds = {
         "BBC":
         "https://feeds.bbci.co.uk/news/rss.xml",
 
-         "Indian Express":
-         "https://indianexpress.com/section/india/feed/",
-      
+        "Reuters":
+        "https://feeds.reuters.com/reuters/topNews",
+
         "The Hindu":
         "https://www.thehindu.com/news/feeder/default.rss"
     }
+
     news_text = "\n\nTOP NEWS HEADLINES\n\n"
 
     for source, url in feeds.items():
