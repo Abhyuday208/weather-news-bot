@@ -32,40 +32,57 @@ RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL")
 
 def get_weather():
 
-    url = (
-        f"https://api.openweathermap.org/data/2.5/weather"
-        f"?q={CITY}"
-        f"&appid={OPENWEATHER_API_KEY}"
-        f"&units=metric"
-    )
+    cities = [
+        "Kochi",
+        "Thiruvananthapuram",
+        "Bengaluru",
+        "Delhi",
+        "Chennai",
+        "Mumbai"
+    ]
 
-    response = requests.get(url).json()
-
-    if response.get("cod") != 200:
-        return "Weather data unavailable."
-
-    temp = response["main"]["temp"]
-    condition = response["weather"][0]["description"]
-
+    weather_report = "🌤 DAILY WEATHER REPORT\n\n"
     alerts = []
 
-    if temp > 35:
-        alerts.append("🔥 HIGH TEMPERATURE ALERT")
+    for city in cities:
 
-    if "rain" in condition.lower():
-        alerts.append("☔ RAIN ALERT")
+        try:
+            url = (
+                f"https://api.openweathermap.org/data/2.5/weather"
+                f"?q={city}&appid={API_KEY}&units=metric"
+            )
 
-    report = (
-        f"WEATHER REPORT\n"
-        f"City: {CITY}\n"
-        f"Temperature: {temp}°C\n"
-        f"Condition: {condition}\n\n"
-    )
+            response = requests.get(url, timeout=10)
+            data = response.json()
 
-    if alerts:
-        report += "\n".join(alerts)
+            temp = data["main"]["temp"]
+            condition = data["weather"][0]["description"]
 
-    return report
+            weather_report += (
+                f"📍 {city}\n"
+                f"🌡 Temperature: {temp}°C\n"
+                f"☁ Condition: {condition}\n\n"
+            )
+
+            # Alert Conditions
+
+            if temp > 35:
+                alerts.append(
+                    f"🔥 Heat Alert: {city} temperature is {temp}°C"
+                )
+
+            if "rain" in condition.lower():
+                alerts.append(
+                    f"🌧 Rain Alert: Rain detected in {city}"
+                )
+
+        except Exception as e:
+
+            weather_report += (
+                f"❌ Could not fetch weather for {city}\n\n"
+            )
+
+    return weather_report, alerts
 
 
 # ======================
@@ -73,44 +90,32 @@ def get_weather():
 # ======================
 
 def get_rss_news():
-
     feeds = {
-        "BBC":
-        "https://feeds.bbci.co.uk/news/rss.xml",
-
-        "Reuters":
-        "https://feeds.reuters.com/reuters/topNews",
-
-        "The Hindu":
-        "https://www.thehindu.com/news/feeder/default.rss"
+        "Indian Express": 
+          "https://indianexpress.com/section/india/feed/",
+        
+        "The Hindu": 
+           "https://www.thehindu.com/news/feeder/default.rss",
+        
+         "BBC": 
+           "https://feeds.bbci.co.uk/news/rss.xml"
     }
 
-    news_text = "\n\nTOP NEWS HEADLINES\n\n"
+    news_text = "\n📰 TOP NEWS HEADLINES\n\n"
 
     for source, url in feeds.items():
+        try:
+            feed = feedparser.parse(url)
 
-        news_text += f"\n===== {source} =====\n\n"
+            news_text += f"\n🔹 {source}\n"
 
-        feed = feedparser.parse(url)
+            for entry in feed.entries[:5]:
+                news_text += f"• {entry.title}\n"
 
-        entries = feed.entries[:3]
+            news_text += "\n"
 
-        for item in entries:
-
-            title = item.get("title", "No Title")
-
-            link = item.get("link", "")
-
-            published = item.get(
-                "published",
-                "No Date"
-            )
-
-            news_text += (
-                f"• {title}\n"
-                f"Published: {published}\n"
-                f"Link: {link}\n\n"
-            )
+        except Exception:
+            news_text += f"❌ Unable to fetch news from {source}\n\n"
 
     return news_text
 
@@ -173,6 +178,34 @@ def main():
 
     send_email(report)
 
+if __name__ == "__main__":
 
+    weather_report, alerts = get_weather()
+
+    email_body = f"""
+Good Morning!
+
+{weather_report}
+
+Generated automatically by GitHub Actions.
+"""
+
+    # Daily weather email
+    send_email(
+        "Daily Weather Report",
+        email_body
+    )
+
+    # Alert email if any city exceeds conditions
+    if alerts:
+
+        alert_body = "\n".join(alerts)
+
+        send_email(
+            "⚠️ Weather Alert",
+            alert_body
+        )
+
+    print("Email sent successfully.")
 if __name__ == "__main__":
     main()
