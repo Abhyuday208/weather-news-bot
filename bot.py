@@ -95,7 +95,7 @@ def get_rss_news():
         "BBC":
         "https://feeds.bbci.co.uk/news/rss.xml",
 
-        "Reuters":
+        "The IndianExpress":
         "https://indianexpress.com/section/india/feed/",
 
         "The Hindu":
